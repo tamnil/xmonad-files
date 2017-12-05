@@ -19,38 +19,38 @@ import XMonad.Config.Gnome
 
 
 main = xmonad $ gnomeConfig
-{ modMask = mod4Mask -- use the Windows button as mod
-    , manageHook = manageHook gnomeConfig <+> myManageHook <+> manageDocks
-        ,  borderWidth = 2
-        ,  focusedBorderColor = "#3299cd"
-        ,  normalBorderColor = "#2b2b2b"
-        -- , handleEventHook    = fullscreenEventHook
-        -- , workspaces = ["1:chrome","2:emacs","3:console","4:server","5:mail","6:other","7:","8:","9:","10:" ]
-        , workspaces = myWorkspaces
-        , terminal = "gnome-terminal"
-        , layoutHook = myLayout
-        --    , focusFollowsMouse = False
-        , XMonad.keys       = Main.keys
+    { modMask = mod4Mask -- use the Windows button as mod
+     , manageHook = manageHook gnomeConfig <+> myManageHook <+> manageDocks
+    ,  borderWidth = 2
+    ,  focusedBorderColor = "#3299cd"
+    ,  normalBorderColor = "#2b2b2b"
+     -- , handleEventHook    = fullscreenEventHook
+     -- , workspaces = ["1:chrome","2:emacs","3:console","4:server","5:mail","6:other","7:","8:","9:","10:" ]
+     , workspaces = myWorkspaces
+     , terminal = "gnome-terminal"
+     , layoutHook = myLayout
+    --    , focusFollowsMouse = False
+     , XMonad.keys       = Main.keys
 
-}
-`additionalKeysP` 
-[
-    ("M-<Left>",    nextWS )
-    , ("M-<Right>",   nextWS )
-    , ("M-S-<Left>",  shiftToPrev )
-    , ("M-S-<Right>", shiftToNext )
-] 
+        }
+        `additionalKeysP` 
+              [
+              ("M-<Left>",    nextWS )
+             , ("M-<Right>",   nextWS )
+             , ("M-S-<Left>",  shiftToPrev )
+             , ("M-S-<Right>", shiftToNext )
+                ] 
 
--- myManageHook = composeAll . concat $
---     [ [ className   =? c --> doFloat           | c <- myFloats]
---     , [ title       =? t --> doFloat           | t <- myOtherFloats]
---     , [ className   =? c --> doF (W.shift "2") | c <- webApps]
---     , [ className   =? c --> doF (W.shift "3") | c <- ircApps]
---     ]
---   where myFloats      = ["MPlayer", "Gimp"]
---         myOtherFloats = ["alsamixer"]
---         webApps       = ["Firefox-bin", "Opera"] -- open on desktop 2
---         ircApps       = ["Ksirc"]                -- open on desktop 3
+    -- myManageHook = composeAll . concat $
+    --     [ [ className   =? c --> doFloat           | c <- myFloats]
+    --     , [ title       =? t --> doFloat           | t <- myOtherFloats]
+    --     , [ className   =? c --> doF (W.shift "2") | c <- webApps]
+    --     , [ className   =? c --> doF (W.shift "3") | c <- ircApps]
+    --     ]
+    --   where myFloats      = ["MPlayer", "Gimp"]
+    --         myOtherFloats = ["alsamixer"]
+    --         webApps       = ["Firefox-bin", "Opera"] -- open on desktop 2
+    --         ircApps       = ["Ksirc"]                -- open on desktop 3
 
 myWorkspaces = ["1:term","2:web","3:code","4:vm","5:media"] ++ map show [6..11]
 
