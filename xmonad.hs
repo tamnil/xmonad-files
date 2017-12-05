@@ -1,41 +1,48 @@
 import XMonad
 import XMonad.Util.EZConfig
 import XMonad.Util.EZConfig(additionalKeysP)
+import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
+import XMonad.Hooks.UrgencyHook
 import XMonad.Actions.CycleWS
-import XMonad.Layout.Gaps
+import XMonad.Actions.WindowBringer
 import XMonad.Actions.PhysicalScreens
+import XMonad.Layout.Gaps
 import XMonad.Layout.Fullscreen
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spiral
 import XMonad.Layout.Tabbed
 import XMonad.Layout.ThreeColumns
+import XMonad.Util.Run   -- for spawnPipe and hPutStrLn
+import XMonad.Util.NamedWindows
+import XMonad.Util.Run
 -- import XMonad.Hooks.EwmhDesktops as D
 import qualified Data.Map as M
 import qualified XMonad.StackSet as W -- to shift and float windows
 import XMonad.Config.Gnome
 
 
-
-main = xmonad $ gnomeConfig
-    { modMask = mod4Mask -- use the Windows button as mod
-     , manageHook = manageHook gnomeConfig <+> myManageHook <+> manageDocks
-    ,  borderWidth = 2
-    ,  focusedBorderColor = "#3299cd"
-    ,  normalBorderColor = "#2b2b2b"
+main = xmonad
+    $ withUrgencyHook LibNotifyUrgencyHook
+    $ gnomeConfig
+      { modMask = mod4Mask -- use the Windows button as mod
+      , manageHook = manageHook gnomeConfig <+> myManageHook <+> manageDocks
+      ,  borderWidth = 5
+      ,  focusedBorderColor = "#3299cd"
+      ,  normalBorderColor = "#2b2b2b"
      -- , handleEventHook    = fullscreenEventHook
      -- , workspaces = ["1:chrome","2:emacs","3:console","4:server","5:mail","6:other","7:","8:","9:","10:" ]
      , workspaces = myWorkspaces
      , terminal = "gnome-terminal"
      , layoutHook = myLayout
-    --    , focusFollowsMouse = False
+     , focusFollowsMouse = True
      , XMonad.keys       = Main.keys
 
         }
         `additionalKeysP` 
               [
-              ("M-<Left>",    nextWS )
+              ("M-<Left>",    prevWS )
              , ("M-<Right>",   nextWS )
              , ("M-S-<Left>",  shiftToPrev )
              , ("M-S-<Right>", shiftToNext )
@@ -52,7 +59,7 @@ main = xmonad $ gnomeConfig
     --         webApps       = ["Firefox-bin", "Opera"] -- open on desktop 2
     --         ircApps       = ["Ksirc"]                -- open on desktop 3
 
-myWorkspaces = ["1:term","2:web","3:code","4:vm","5:media"] ++ map show [6..11]
+myWorkspaces = ["1:term","2:web","3:code","4:chat","5:media","6:virt","7:games"] ++ map show [8..14]
 
 myLayout = avoidStruts (
     ThreeColMid 1 (3/100) (1/2) |||
@@ -60,9 +67,7 @@ myLayout = avoidStruts (
     Mirror (Tall 1 (3/100) (1/2)) |||
     tabbed shrinkText tabConfig |||
     Full
-    -- |||
-    -- spiral (6/7)
-    ) |||   noBorders (fullscreenFull Full)
+    ||| spiral (6/7)) |||   noBorders (fullscreenFull Full)
     
 
 -- Colors for text and backgrounds of each tab when in "Tabbed" layout.
@@ -110,7 +115,6 @@ keys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
     , ((modMask,               xK_j     ), windows W.focusDown) -- %! Move focus to the next window
     , ((modMask,               xK_k     ), windows W.focusUp  ) -- %! Move focus to the previous window
     , ((modMask,               xK_m     ), windows W.focusMaster  ) -- %! Move focus to the master window
-
     -- modifying the window order
     , ((modMask,               xK_Return), windows W.swapMaster) -- %! Swap the focused window and the master window
     , ((modMask .|. shiftMask, xK_j     ), windows W.swapDown  ) -- %! Swap the focused window with the next window
@@ -128,8 +132,14 @@ keys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
     , ((modMask              , xK_period), sendMessage (IncMasterN (-1))) -- %! Deincrement the number of windows in the master area
 
     , ((modMask		     , xK_p), spawn myLauncher)
-
+    , ((modMask .|. shiftMask, xK_g     ), gotoMenu)
+    , ((modMask .|. shiftMask, xK_b     ), bringMenu)
     -- quit, or restart
+    
+        -- Restart xmonad.
+    , ((modMask              , xK_q), restart "xmonad" True)
+
+
 
     , ((modMask .|. shiftMask, xK_slash ), spawn ("echo \"" ++ help ++ "\" | xmessage -file -")) -- %! Run xmessage with a summary of the default keybindings (useful for beginners)
     -- repeat the binding for non-American layout keyboards
@@ -201,3 +211,11 @@ help = unlines ["The default modifier key is 'alt'. Default keybindings:",
     -- myLayouts = gaps [(U, 26)] $ layoutHook gnomeConfig
 myLauncher = "$(synapse)"
 
+data LibNotifyUrgencyHook = LibNotifyUrgencyHook deriving (Read, Show)
+
+instance UrgencyHook LibNotifyUrgencyHook where
+    urgencyHook LibNotifyUrgencyHook w = do
+        name     <- getName w
+        Just idx <- fmap (W.findTag w) $ gets windowset
+
+        safeSpawn "notify-send" [show name, "workspace " ++ idx]
