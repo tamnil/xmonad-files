@@ -13,7 +13,9 @@ import XMonad.Layout.Fullscreen
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spiral
 import XMonad.Layout.Tabbed
+import XMonad.Layout.MouseResizableTile
 import XMonad.Layout.ThreeColumns
+import XMonad.Layout.Circle
 import XMonad.Util.Run   -- for spawnPipe and hPutStrLn
 import XMonad.Util.NamedWindows
 import XMonad.Util.Run
@@ -59,15 +61,18 @@ main = xmonad
     --         webApps       = ["Firefox-bin", "Opera"] -- open on desktop 2
     --         ircApps       = ["Ksirc"]                -- open on desktop 3
 
-myWorkspaces = ["1:term","2:web","3:code","4:chat","5:media","6:virt","7:games"] ++ map show [8..14]
+myWorkspaces = ["1:term","2:web","3:code","4:social","5:chat","6:media","7:virt","8:games"] ++ map show [8..14]
 
 myLayout = avoidStruts (
-    ThreeColMid 1 (3/100) (1/2) |||
-    Tall 1 (3/100) (1/2) |||
-    Mirror (Tall 1 (3/100) (1/2)) |||
-    tabbed shrinkText tabConfig |||
-    Full
-    ||| spiral (6/7)) |||   noBorders (fullscreenFull Full)
+    ThreeColMid 1 (3/100) (1/2) 
+    ||| Tall 1 (3/100) (1/2) 
+    ||| Mirror (Tall 1 (3/100) (1/2)) 
+    ||| tabbed shrinkText tabConfig 
+    ||| Full
+    ||| mouseResizableTile
+    ||| ThreeCol 1 (3/100) (1/2)
+    ||| spiral (6/7)) 
+    |||   noBorders (fullscreenFull Full)
     
 
 -- Colors for text and backgrounds of each tab when in "Tabbed" layout.
@@ -89,7 +94,8 @@ myManageHook = composeAll
     , className =? "Gimp"           --> doFloat
     , resource  =? "gpicview"       --> doFloat
     , className =? "MPlayer"        --> doFloat
-    , className =? "VirtualBox"     --> doShift "4:vm"
+    , className =? "Keepassx"        --> doFloat
+    , className =? "VirtualBox"     --> doShift "4:virt"
     , className =? "Xchat"          --> doShift "5:media"
     , className =? "stalonetray"    --> doIgnore
     , isFullscreen --> (doF W.focusDown <+> doFullFloat)
