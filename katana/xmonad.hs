@@ -5,9 +5,11 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.UrgencyHook
+import XMonad.Hooks.EwmhDesktops as E  -- Extended Window Manager Hints
 import XMonad.Actions.CycleWS
 import XMonad.Actions.WindowBringer
 import XMonad.Actions.PhysicalScreens
+import XMonad.Actions.GroupNavigation
 import XMonad.Layout.Gaps
 import XMonad.Layout.Fullscreen
 import XMonad.Layout.NoBorders
@@ -20,28 +22,35 @@ import XMonad.Util.Run   -- for spawnPipe and hPutStrLn
 import XMonad.Util.NamedWindows
 import XMonad.Util.Run
 import XMonad.Layout.MultiColumns
--- import XMonad.Hooks.EwmhDesktops as D
+import XMonad.Hooks.EwmhDesktops as D
+import XMonad.Wallpaper
+import XMonad.Actions.SpawnOn
+import XMonad.Hooks.SetWMName
+
 import qualified Data.Map as M
 import qualified XMonad.StackSet as W -- to shift and float windows
 import XMonad.Config.Gnome
 
 
+
 main = xmonad
     $ withUrgencyHook LibNotifyUrgencyHook
+    -- $  ewmh def{ handleEventHook = handleEventHook def <+> D.fullscreenEventHook }
     $ gnomeConfig
       { modMask = mod4Mask -- use the Windows button as mod
       , manageHook = manageHook gnomeConfig <+> myManageHook <+> manageDocks
-      ,  borderWidth = 5
-      ,  focusedBorderColor = "#3299cd"
-      ,  normalBorderColor = "#2b2b2b"
+      , borderWidth = 5
+      , focusedBorderColor = "#3299cd"
+      , normalBorderColor = "#2b2b2b"
+      -- , handleEventHook =  handleEventHook def <+> E.fullscreenEventHook 
      -- , handleEventHook    = fullscreenEventHook
      -- , workspaces = ["1:chrome","2:emacs","3:console","4:server","5:mail","6:other","7:","8:","9:","10:" ]
-     , workspaces = myWorkspaces
-     , terminal = "gnome-terminal"
-     , layoutHook = myLayout
-     , focusFollowsMouse = True
-     , XMonad.keys       = Main.keys
-
+      , workspaces = myWorkspaces
+      , terminal = "gnome-terminal"
+      , layoutHook = myLayout
+      , focusFollowsMouse = True
+      , logHook = historyHook <+> myLogHook
+      , XMonad.keys       = Main.keys
         }
         `additionalKeysP` 
               [
@@ -62,14 +71,39 @@ main = xmonad
     --         webApps       = ["Firefox-bin", "Opera"] -- open on desktop 2
     --         ircApps       = ["Ksirc"]                -- open on desktop 3
 
-myWorkspaces = ["1:term","2:web","3:code","4:social","5:chat","6:media","7:virt","8:games","9:music"] ++ map show [9..14]
+myWorkspaces = ["1:term","2:web-1","3:web-2","4:code","5:xtra","6:media","7:virt","8:games","9:music","0:temp"]  -- ++ map show [9..14]
+
+
+
+-- myStartupHook = setWMName "LG3D"
+--                 -- >> spawnHere "gnome-settings-daemon"
+--                 -- >> spawnHere "nm-applet"
+--                 >> spawnHere "feh --bg-scale $HOME/.xmonad/background.png"
+                -- >> spawnHere "xcompmgr"
+                -- >> spawnHere "python $HOME/bin/dropbox.py start"
+                -- >> spawnHere "$HOME/.xmonad/passbackups.sh"
+                -- >> spawnHere "$HOME/.xmonad/keymappings.sh"
+                -- >> spawnHere "sleep 15; $HOME/.xmonad/brightness.sh"
+--                 >> spawnOn nine nvidiaMenu
+--                 >> spawnOn four myMusic
+-- --                >> spawnOn four myIm
+--                 >> spawnOn three myTerminal
+-- --                >> spawnOn two myEditorInit
+--                 >> spawnOn one myInternet
+--
+
+myLogHook :: X ()
+myLogHook = do ewmhDesktopsLogHook
+               return ()
 
 myLayout = avoidStruts (
-    ThreeColMid 1 (3/100) (1/2) 
-    ||| tabbed shrinkText tabConfig 
-    ||| Full
+   -- |||   
+     multiCol [1 ,1  ] 2 0.01 0.5
+    -- ||| multiCol [1] 2 0.01 0.5
+    |||  tabbed shrinkText tabConfig   
     ||| mouseResizableTile
-    ||| multiCol [1] 2 0.01 0.5
+    ||| ThreeColMid 1 (3/100) (1/2) 
+    ||| Full
     -- ||| Tall 1 (3/100) (1/2) 
     -- ||| Mirror (Tall 1 (3/100) (1/2)) 
     -- ||| ThreeCol 1 (3/100) (1/2)
@@ -100,7 +134,7 @@ myManageHook = composeAll
     , className =? "MPlayer"        --> doFloat
     , className =? "Keepassx"        --> doFloat
     , className =? "VirtualBox"     --> doShift "7:virt"
-    , className =? "Spotify"          --> doShift "9:music"
+    -- , className =? "Spotify"          --> doShift "9:music"
     , className =? "stalonetray"    --> doIgnore
     , isFullscreen --> (doF W.focusDown <+> doFullFloat)
     ]
@@ -149,14 +183,14 @@ keys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
         -- Restart xmonad.
     , ((modMask              , xK_q), restart "xmonad" True)
 
-
+    , ((modMask              , xK_BackSpace), nextMatch History (return True))
 
     ]
     ++
     -- mod-[1..9] %! itch to workspace N
     -- mod-shift-[1..9] %! Move client to workspace N
     [((m .|. modMask, k), windows $ f i)
-        | (i, k) <- zip (XMonad.workspaces conf) [xK_grave, xK_1, xK_2, xK_3, xK_4, xK_5, xK_6, xK_7, xK_8, xK_9, xK_0, xK_minus, xK_equal, xK_BackSpace]
+        | (i, k) <- zip (XMonad.workspaces conf) [ xK_1, xK_2, xK_3, xK_4, xK_5, xK_6, xK_7, xK_8, xK_9, xK_0]
         , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]]
     ++
     -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
